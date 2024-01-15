@@ -9,7 +9,9 @@ import com.example.instagram_app.components.NotificationMessage
 import com.example.instagram_app.screen.InstagramViewModel
 import com.example.instagram_app.screen.auth.LoginScreen
 import com.example.instagram_app.screen.auth.SingUpScreen
-import com.example.instagram_app.screen.home.HomeScreen
+import com.example.instagram_app.screen.feed.FeedScreen
+import com.example.instagram_app.screen.post.PostScreen
+import com.example.instagram_app.screen.search.SearchScreen
 import com.example.instagram_app.screen.splash.SplashScreen
 
 @Composable
@@ -27,8 +29,14 @@ fun NavGraph() {
         composable(route = AllScreens.LoginScreen.name) {
             LoginScreen(navController = navController, viewModel = viewModel)
         }
-        composable(route = AllScreens.HomeScreen.name) {
-            HomeScreen(navController = navController, viewModel = viewModel)
+        composable(route = AllScreens.FeedScreen.name) {
+            FeedScreen(navController = navController, viewModel = viewModel)
+        }
+        composable(route = AllScreens.SearchScreen.name) {
+            SearchScreen(navController = navController, viewModel = viewModel)
+        }
+        composable(route = AllScreens.PostScreen.name) {
+            PostScreen(navController = navController, viewModel = viewModel)
         }
     }
 }

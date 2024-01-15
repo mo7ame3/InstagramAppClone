@@ -53,8 +53,10 @@ fun LoginScreen(navController: NavController, viewModel: InstagramViewModel) {
                 focus.clearFocus(force = true)
                 viewModel.onLogin(
                     email = emailState.value.text,
-                    password = passwordState.value.text
+                    password = passwordState.value.text,
+                    navController = navController
                 )
+
             }, text = "LOGIN")
 
             CustomTextButton(onClick = {

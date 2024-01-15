@@ -59,7 +59,8 @@ fun SingUpScreen(navController: NavController, viewModel: InstagramViewModel) {
                 viewModel.onSignup(
                     userName = userNameState.value.text,
                     email = emailState.value.text,
-                    password = passwordState.value.text
+                    password = passwordState.value.text,
+                    navController = navController
                 )
             }, text = "SIGN UP")
 

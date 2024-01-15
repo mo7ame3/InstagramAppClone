@@ -2,8 +2,10 @@ package com.example.instagram_app.screen
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.navigation.NavController
 import com.example.instagram_app.data.Event
 import com.example.instagram_app.data.UserData
+import com.example.instagram_app.navigation.AllScreens
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
@@ -22,10 +24,11 @@ class InstagramViewModel @Inject constructor(
 ) : ViewModel() {
     private val signedIn = mutableStateOf(false)
     val inProgress = mutableStateOf(false)
-    private val userData = mutableStateOf<UserData?>(null)
+     val userData = mutableStateOf<UserData?>(null)
     val popUpNotification = mutableStateOf<Event<String>?>(null)
 
     init {
+      //  auth.signOut()
         val currentUser = auth.currentUser
         signedIn.value = currentUser != null
         currentUser?.uid?.let { uid ->
@@ -33,7 +36,7 @@ class InstagramViewModel @Inject constructor(
         }
     }
 
-    fun onSignup(userName: String, email: String, password: String) {
+    fun onSignup(userName: String, email: String, password: String, navController: NavController) {
         if (userName.isEmpty() or email.isEmpty() or password.isEmpty()) {
             handleException(customMassage = "please fill in all fields")
             return
@@ -50,8 +53,12 @@ class InstagramViewModel @Inject constructor(
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
                                 signedIn.value = true
-
                                 createOrUpdateProfile(userName = userName)
+                                navController.navigate(route = AllScreens.FeedScreen.name){
+                                    navController.popBackStack()
+                                    navController.popBackStack()
+                                    navController.popBackStack()
+                                }
                             } else {
                                 handleException(
                                     exception = task.exception,
@@ -63,12 +70,15 @@ class InstagramViewModel @Inject constructor(
                         }
                 }
             }
-            .addOnFailureListener { }
+            .addOnFailureListener {
+                handleException(exception = it, customMassage = "Signup failed")
+                inProgress.value = false
+            }
 
 
     }
 
-    fun onLogin(email: String, password: String) {
+    fun onLogin(email: String, password: String , navController: NavController) {
         if (email.isEmpty() or password.isEmpty()) {
             handleException(customMassage = "please fill in all fields")
             return
@@ -82,6 +92,11 @@ class InstagramViewModel @Inject constructor(
                     inProgress.value = false
                     auth.currentUser?.uid?.let { uid ->
                         getUserData(uid)
+                    }
+                    navController.navigate(route = AllScreens.FeedScreen.name){
+                        navController.popBackStack()
+                        navController.popBackStack()
+                        navController.popBackStack()
                     }
                 } else {
                     handleException(exception = task.exception, customMassage = "Login failed")

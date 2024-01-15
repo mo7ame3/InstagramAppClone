@@ -46,7 +46,7 @@ fun SplashScreen(navController: NavController) {
                 navController.popBackStack()
             }
         } else {
-            navController.navigate(route = AllScreens.HomeScreen.name) {
+            navController.navigate(route = AllScreens.FeedScreen.name) {
                 navController.popBackStack()
                 navController.popBackStack()
             }
