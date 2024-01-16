@@ -24,11 +24,11 @@ class InstagramViewModel @Inject constructor(
 ) : ViewModel() {
     private val signedIn = mutableStateOf(false)
     val inProgress = mutableStateOf(false)
-     val userData = mutableStateOf<UserData?>(null)
+    val userData = mutableStateOf<UserData?>(null)
     val popUpNotification = mutableStateOf<Event<String>?>(null)
 
     init {
-      //  auth.signOut()
+        //  auth.signOut()
         val currentUser = auth.currentUser
         signedIn.value = currentUser != null
         currentUser?.uid?.let { uid ->
@@ -54,7 +54,7 @@ class InstagramViewModel @Inject constructor(
                             if (task.isSuccessful) {
                                 signedIn.value = true
                                 createOrUpdateProfile(userName = userName)
-                                navController.navigate(route = AllScreens.FeedScreen.name){
+                                navController.navigate(route = AllScreens.FeedScreen.name) {
                                     navController.popBackStack()
                                     navController.popBackStack()
                                     navController.popBackStack()
@@ -78,7 +78,7 @@ class InstagramViewModel @Inject constructor(
 
     }
 
-    fun onLogin(email: String, password: String , navController: NavController) {
+    fun onLogin(email: String, password: String, navController: NavController) {
         if (email.isEmpty() or password.isEmpty()) {
             handleException(customMassage = "please fill in all fields")
             return
@@ -93,7 +93,7 @@ class InstagramViewModel @Inject constructor(
                     auth.currentUser?.uid?.let { uid ->
                         getUserData(uid)
                     }
-                    navController.navigate(route = AllScreens.FeedScreen.name){
+                    navController.navigate(route = AllScreens.FeedScreen.name) {
                         navController.popBackStack()
                         navController.popBackStack()
                         navController.popBackStack()
@@ -110,8 +110,15 @@ class InstagramViewModel @Inject constructor(
 
     }
 
-    fun signOut() {
+    fun signOut(navController: NavController) {
         auth.signOut()
+        if (FirebaseAuth.getInstance().currentUser?.email.isNullOrEmpty()) {
+            navController.navigate(route = AllScreens.SingUpScreen.name) {
+                navController.popBackStack()
+                navController.popBackStack()
+                navController.popBackStack()
+            }
+        }
     }
 
     private fun createOrUpdateProfile(

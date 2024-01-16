@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -170,4 +171,15 @@ fun UserImageCard(
             CommonImage(data = userImage)
         }
     }
+}
+
+@Composable
+fun CommonDivider() {
+    Divider(
+        color = Color.LightGray,
+        thickness = 1.dp,
+        modifier = Modifier
+            .alpha(0.3f)
+            .padding(top = 8.dp, bottom = 8.dp)
+    )
 }

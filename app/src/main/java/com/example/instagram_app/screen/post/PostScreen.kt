@@ -31,6 +31,7 @@ import com.example.instagram_app.components.BottomNavigationItem
 import com.example.instagram_app.components.BottomNavigationMenu
 import com.example.instagram_app.components.CommonProgressSpinner
 import com.example.instagram_app.components.UserImageCard
+import com.example.instagram_app.navigation.AllScreens
 import com.example.instagram_app.screen.InstagramViewModel
 
 @Composable
@@ -78,7 +79,9 @@ fun PostScreen(navController: NavController, viewModel: InstagramViewModel) {
                 Text(text = userData?.bio ?: "")
             }
             OutlinedButton(
-                onClick = { /*TODO*/ },
+                onClick = {
+                    navController.navigate(route = AllScreens.ProfileScreen.name)
+                },
                 modifier = Modifier
                     .padding(8.dp)
                     .fillMaxWidth(),

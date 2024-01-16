@@ -11,6 +11,7 @@ import com.example.instagram_app.screen.auth.LoginScreen
 import com.example.instagram_app.screen.auth.SingUpScreen
 import com.example.instagram_app.screen.feed.FeedScreen
 import com.example.instagram_app.screen.post.PostScreen
+import com.example.instagram_app.screen.profile.ProfileScreen
 import com.example.instagram_app.screen.search.SearchScreen
 import com.example.instagram_app.screen.splash.SplashScreen
 
@@ -37,6 +38,9 @@ fun NavGraph() {
         }
         composable(route = AllScreens.PostScreen.name) {
             PostScreen(navController = navController, viewModel = viewModel)
+        }
+        composable(route = AllScreens.ProfileScreen.name) {
+            ProfileScreen(navController = navController, viewModel = viewModel)
         }
     }
 }

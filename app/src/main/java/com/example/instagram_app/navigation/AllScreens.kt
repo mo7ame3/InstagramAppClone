@@ -4,6 +4,7 @@ enum class AllScreens {
     SingUpScreen,
     LoginScreen,
     SearchScreen,
+    ProfileScreen,
     PostScreen,
     FeedScreen,
     SplashScreen,
