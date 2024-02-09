@@ -1,17 +1,25 @@
 package com.example.instagram_app.screen.profile
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -27,11 +35,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.instagram_app.components.CommonDivider
+import com.example.instagram_app.components.CommonImage
 import com.example.instagram_app.components.CommonProgressSpinner
 import com.example.instagram_app.navigation.AllScreens
 import com.example.instagram_app.screen.InstagramViewModel
 
 @Composable
+@ExperimentalMaterial3Api
 fun ProfileScreen(navController: NavController, viewModel: InstagramViewModel) {
     val isLoading = viewModel.inProgress.value
     if (isLoading) {
@@ -48,27 +58,24 @@ fun ProfileScreen(navController: NavController, viewModel: InstagramViewModel) {
             mutableStateOf(userData?.bio ?: "")
         }
 
-        ProfileContent(
-            viewModel = viewModel,
+        ProfileContent(viewModel = viewModel,
             name = name,
             userName = userName,
             bio = bio,
             onNameChange = { name = it },
             onUserNameChange = { userName = it },
             onBioChange = { bio = it },
-            onSave = {},
+            onSave = { viewModel.updateProfileData(name, userName, bio) },
             onBack = {
                 navController.navigate(route = AllScreens.PostScreen.name) {
                     navController.popBackStack()
                 }
             },
-            onLogout = { viewModel.signOut(navController = navController) }
-        )
+            onLogout = { viewModel.signOut(navController = navController) })
 
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileContent(
     viewModel: InstagramViewModel,
@@ -83,6 +90,7 @@ fun ProfileContent(
     onLogout: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
+    val imageUrl = viewModel.userData.value?.imageUrl
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -105,27 +113,19 @@ fun ProfileContent(
 
         // userImage
 
-        Column(
-            modifier = Modifier
-                .height(200.dp)
-                .fillMaxWidth()
-                .background(Color.White)
-        ) {
-
-        }
+        ProfileImage(imageUrl = imageUrl, viewModel = viewModel)
 
         CommonDivider()
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 4.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically
+                .padding(start = 4.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = "Name", modifier = Modifier.width(100.dp))
             TextField(
-                value = name,
-                onValueChange = onNameChange,
-                colors = TextFieldDefaults.colors(
+                value = name, onValueChange = onNameChange, colors = TextFieldDefaults.colors(
                     focusedTextColor = Color.Black,
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
@@ -136,7 +136,8 @@ fun ProfileContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 4.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically
+                .padding(start = 4.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = "UserName", modifier = Modifier.width(100.dp))
             TextField(
@@ -153,20 +154,17 @@ fun ProfileContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 4.dp, end = 4.dp), verticalAlignment = Alignment.Top
+                .padding(start = 4.dp, end = 4.dp),
+            verticalAlignment = Alignment.Top
         ) {
             Text(text = "bio", modifier = Modifier.width(100.dp))
             TextField(
-                value = bio,
-                onValueChange = onBioChange,
-                colors = TextFieldDefaults.colors(
+                value = bio, onValueChange = onBioChange, colors = TextFieldDefaults.colors(
                     focusedTextColor = Color.Black,
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
                     disabledContainerColor = Color.Transparent,
-                ),
-                singleLine = false,
-                modifier = Modifier.height(150.dp)
+                ), singleLine = false, modifier = Modifier.height(150.dp)
             )
         }
 
@@ -179,5 +177,42 @@ fun ProfileContent(
             Text(text = "Logout", modifier = Modifier.clickable { onLogout.invoke() })
         }
 
+    }
+}
+
+
+@Composable
+fun ProfileImage(imageUrl: String?, viewModel: InstagramViewModel) {
+
+    val launcher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let {
+                viewModel.uploadProfileImage(uri = uri)
+            }
+        }
+
+    Box(modifier = Modifier.height(IntrinsicSize.Min)) {
+
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth()
+                .clickable { launcher.launch("image/*") },
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Card(
+                shape = CircleShape, modifier = Modifier
+                    .padding(8.dp)
+                    .size(100.dp)
+            ) {
+                CommonImage(data = imageUrl)
+            }
+            Text(text = "Change Profile Picture")
+        }
+
+        val isLoading = viewModel.inProgress.value
+        if (isLoading) {
+            CommonProgressSpinner()
+        }
     }
 }

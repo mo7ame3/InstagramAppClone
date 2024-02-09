@@ -1,5 +1,6 @@
 package com.example.instagram_app.screen
 
+import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
@@ -12,6 +13,7 @@ import com.google.firebase.firestore.toObject
 import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.lang.Exception
+import java.util.UUID
 import javax.inject.Inject
 
 const val USER = "users"
@@ -20,7 +22,7 @@ const val USER = "users"
 class InstagramViewModel @Inject constructor(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore,
-    val storage: FirebaseStorage
+    private val storage: FirebaseStorage
 ) : ViewModel() {
     private val signedIn = mutableStateOf(false)
     val inProgress = mutableStateOf(false)
@@ -113,6 +115,8 @@ class InstagramViewModel @Inject constructor(
     fun signOut(navController: NavController) {
         auth.signOut()
         if (FirebaseAuth.getInstance().currentUser?.email.isNullOrEmpty()) {
+            signedIn.value = false
+            userData.value = null
             navController.navigate(route = AllScreens.SingUpScreen.name) {
                 navController.popBackStack()
                 navController.popBackStack()
@@ -183,4 +187,39 @@ class InstagramViewModel @Inject constructor(
         val message = if (customMassage.isEmpty()) errorMg else "$customMassage: $errorMg"
         popUpNotification.value = Event(message)
     }
+
+    fun updateProfileData(
+        userName: String,
+        name: String,
+        bio: String,
+    ) {
+        createOrUpdateProfile(userName, name, bio)
+    }
+
+    private fun uploadImage(uri: Uri, onSuccess: (Uri) -> Unit) {
+        inProgress.value = true
+        val storageRef = storage.reference
+        val uuid = UUID.randomUUID()
+        val imageRef = storageRef.child("images/$uuid")
+        val uploadTask = imageRef.putFile(uri)
+
+        uploadTask.addOnSuccessListener {
+            val result = it.metadata?.reference?.downloadUrl
+            result?.addOnSuccessListener(onSuccess)
+        }
+            .addOnFailureListener { ex ->
+                handleException(ex)
+                inProgress.value = false
+            }
+
+    }
+
+
+    fun uploadProfileImage(uri: Uri) {
+        uploadImage(uri) {
+            createOrUpdateProfile(imageUrl = it.toString())
+        }
+    }
+
+
 }
