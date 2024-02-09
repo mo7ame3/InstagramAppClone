@@ -1,14 +1,17 @@
 package com.example.instagram_app.screen
 
 import android.net.Uri
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
 import com.example.instagram_app.data.Event
+import com.example.instagram_app.data.PostData
 import com.example.instagram_app.data.UserData
 import com.example.instagram_app.navigation.AllScreens
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.toObject
 import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,6 +20,7 @@ import java.util.UUID
 import javax.inject.Inject
 
 const val USER = "users"
+const val POSTS = "posts"
 
 @HiltViewModel
 class InstagramViewModel @Inject constructor(
@@ -28,6 +32,8 @@ class InstagramViewModel @Inject constructor(
     val inProgress = mutableStateOf(false)
     val userData = mutableStateOf<UserData?>(null)
     val popUpNotification = mutableStateOf<Event<String>?>(null)
+     val refreshPostProgress = mutableStateOf(false)
+     val posts = mutableStateOf<List<PostData>>(emptyList())
 
     init {
         //  auth.signOut()
@@ -174,7 +180,7 @@ class InstagramViewModel @Inject constructor(
                 val user = it.toObject<UserData>()
                 userData.value = user
                 inProgress.value = false
-                popUpNotification.value = Event("User data retrieved successfully")
+                refreshPosts()
             }
             .addOnFailureListener { ext ->
                 handleException(ext, "Can't retrieve user data")
@@ -221,5 +227,85 @@ class InstagramViewModel @Inject constructor(
         }
     }
 
+
+    fun onNewPost(
+        uri: Uri,
+        description: String,
+        onPostSuccess: () -> Unit
+    ) {
+        uploadImage(uri) {
+            onCreatePost(imageUrl = it, description = description, onPostSuccess = onPostSuccess)
+        }
+    }
+
+    private fun onCreatePost(
+        imageUrl: Uri?,
+        description: String,
+        onPostSuccess: () -> Unit
+    ) {
+        inProgress.value = true
+        val currentUid = auth.currentUser?.uid
+        val currentUserName = userData.value?.userName
+        val currentUserImage = userData.value?.imageUrl
+        if (currentUid != null) {
+            val postUuid = UUID.randomUUID().toString()
+            val post = PostData(
+                postId = postUuid,
+                userId = currentUid,
+                userName = currentUserName,
+                userImage = currentUserImage,
+                postImage = imageUrl.toString(),
+                postDescription = description,
+                time = System.currentTimeMillis()
+            )
+
+            db.collection(POSTS).document(postUuid).set(post)
+                .addOnSuccessListener {
+                    popUpNotification.value = Event("Post created successfully")
+                    inProgress.value = false
+                    refreshPosts()
+                    onPostSuccess.invoke()
+                }
+                .addOnFailureListener { ex ->
+                    handleException(ex, "Error creating post")
+                    inProgress.value = false
+                }
+
+
+        } else {
+            handleException(customMassage = "Error username unavailable. Unable to create post")
+        }
+    }
+
+    private fun refreshPosts() {
+        val currentUid = auth.currentUser?.uid
+        if (currentUid != null) {
+            refreshPostProgress.value = true
+            db.collection(POSTS).whereEqualTo("userId", currentUid).get()
+                .addOnSuccessListener { documents ->
+                    convertPosts(
+                        documents = documents, outState = posts
+                    )
+                    refreshPostProgress.value = false
+                }
+                .addOnFailureListener { ex ->
+                    handleException(ex, "Can't refresh posts")
+                    refreshPostProgress.value = false
+                }
+        } else {
+            handleException(customMassage = "Error username unavailable. Unable to create post")
+
+        }
+    }
+
+    private fun convertPosts(documents: QuerySnapshot, outState: MutableState<List<PostData>>) {
+        val newPosts = mutableListOf<PostData>()
+        documents.forEach { doc ->
+            val post = doc.toObject<PostData>()
+            newPosts.add(post)
+        }
+        val sortedPosts = newPosts.sortedByDescending { it.time }
+        outState.value = sortedPosts
+    }
 
 }
