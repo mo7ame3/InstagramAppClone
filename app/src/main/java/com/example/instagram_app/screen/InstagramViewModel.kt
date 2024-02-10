@@ -1,15 +1,16 @@
 package com.example.instagram_app.screen
 
+import PostData
 import android.net.Uri
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
 import com.example.instagram_app.data.Event
-import com.example.instagram_app.data.PostData
 import com.example.instagram_app.data.UserData
 import com.example.instagram_app.navigation.AllScreens
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.toObject
@@ -32,8 +33,9 @@ class InstagramViewModel @Inject constructor(
     val inProgress = mutableStateOf(false)
     val userData = mutableStateOf<UserData?>(null)
     val popUpNotification = mutableStateOf<Event<String>?>(null)
-     val refreshPostProgress = mutableStateOf(false)
-     val posts = mutableStateOf<List<PostData>>(emptyList())
+
+    val refreshPostProgress = mutableStateOf(false)
+    val posts = mutableStateOf<List<PostData>>(listOf())
 
     init {
         //  auth.signOut()
@@ -224,6 +226,7 @@ class InstagramViewModel @Inject constructor(
     fun uploadProfileImage(uri: Uri) {
         uploadImage(uri) {
             createOrUpdateProfile(imageUrl = it.toString())
+            updatePostUserImageData(imageUrl = it.toString())
         }
     }
 
@@ -256,7 +259,8 @@ class InstagramViewModel @Inject constructor(
                 userImage = currentUserImage,
                 postImage = imageUrl.toString(),
                 postDescription = description,
-                time = System.currentTimeMillis()
+                time = System.currentTimeMillis(),
+                likes = listOf<String>()
             )
 
             db.collection(POSTS).document(postUuid).set(post)
@@ -275,6 +279,35 @@ class InstagramViewModel @Inject constructor(
         } else {
             handleException(customMassage = "Error username unavailable. Unable to create post")
         }
+    }
+
+    private fun updatePostUserImageData(imageUrl: String?){
+        val currentUid = auth.currentUser?.uid
+        db.collection(POSTS).whereEqualTo("userId", currentUid).get()
+            .addOnSuccessListener { documents ->
+            val posts = mutableStateOf<List<PostData>>(arrayListOf())
+                convertPosts(documents , posts)
+                val refs = arrayListOf<DocumentReference>()
+                for(post in posts.value){
+                    post.postId?.let { id ->
+                        refs.add(db.collection(POSTS).document(id))
+                    }
+                }
+                if(refs.isNotEmpty()){
+                    db.runBatch{batch ->
+                        for(ref in refs){
+                            batch.update(ref, "userImage", imageUrl)
+
+                        }
+                    }
+                        .addOnSuccessListener {
+                            refreshPosts()
+                        }
+                }
+            }
+            .addOnFailureListener { ex ->
+                handleException(ex, "Can't update user image in posts")
+            }
     }
 
     private fun refreshPosts() {

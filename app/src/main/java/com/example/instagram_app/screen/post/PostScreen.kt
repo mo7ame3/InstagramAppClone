@@ -1,6 +1,10 @@
+@file:Suppress("NAME_SHADOWING")
+
 package com.example.instagram_app.screen.post
 
+import PostData
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -40,9 +44,10 @@ import com.example.instagram_app.components.BottomNavigationMenu
 import com.example.instagram_app.components.CommonImage
 import com.example.instagram_app.components.CommonProgressSpinner
 import com.example.instagram_app.components.UserImageCard
-import com.example.instagram_app.data.PostData
 import com.example.instagram_app.navigation.AllScreens
 import com.example.instagram_app.screen.InstagramViewModel
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 data class PostRow(
     var post1: PostData? = null,
@@ -52,6 +57,7 @@ data class PostRow(
     fun isFull() = post1 != null && post2 != null && post3 != null
     fun add(post: PostData) {
         if (post1 == null) {
+
             post1 = post
         } else if (post2 == null) {
             post2 = post
@@ -67,15 +73,14 @@ fun PostScreen(navController: NavController, viewModel: InstagramViewModel) {
     val isLoading = viewModel.inProgress.value
     val postsLoading = viewModel.refreshPostProgress.value
     val posts = viewModel.posts.value
-    val newPostImageLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.GetContent()
-        ) { uri ->
-            uri?.let {
-                val encoded = Uri.encode(it.toString())
-                navController.navigate(route = AllScreens.NewProfileScreen.name + "/$encoded")
-            }
+    val newPostImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            val encoded = Uri.encode(it.toString())
+            navController.navigate(route = AllScreens.NewPostScreen.name + "/$encoded")
         }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -124,13 +129,13 @@ fun PostScreen(navController: NavController, viewModel: InstagramViewModel) {
                     .fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                 elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 0.dp,
-                    pressedElevation = 0.dp,
-                    disabledElevation = 0.dp
-                ), shape = RoundedCornerShape(10)
+                    defaultElevation = 0.dp, pressedElevation = 0.dp, disabledElevation = 0.dp
+                ),
+                shape = RoundedCornerShape(10)
             ) {
                 Text(text = "Edit Profile", color = Color.Black)
             }
+
             PostList(
                 isContextLoading = isLoading,
                 postsLoading = postsLoading,
@@ -139,13 +144,14 @@ fun PostScreen(navController: NavController, viewModel: InstagramViewModel) {
                     .weight(1f)
                     .padding(1.dp)
                     .fillMaxSize(),
-            ) {
-                // on Post Click
+            ) { post ->
+                val postJson = post.toJson()
+                val encodedPostJson = URLEncoder.encode(postJson, StandardCharsets.UTF_8.toString())
+              navController.navigate(route = AllScreens.SinglePostScreen.name + "/$encodedPostJson")
             }
         }
         BottomNavigationMenu(
-            selectedItem = BottomNavigationItem.POST,
-            navController = navController
+            selectedItem = BottomNavigationItem.POST, navController = navController
         )
     }
 
@@ -209,6 +215,7 @@ fun PostList(
         LazyColumn(modifier = modifier) {
             val rows = arrayListOf<PostRow>()
             var currentRow = PostRow()
+            rows.add(currentRow)
             for (post in posts) {
                 if (currentRow.isFull()) {
                     currentRow = PostRow()

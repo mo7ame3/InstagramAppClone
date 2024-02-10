@@ -5,8 +5,9 @@ enum class AllScreens {
     LoginScreen,
     SearchScreen,
     ProfileScreen,
-    NewProfileScreen,
     PostScreen,
+    NewPostScreen,
+    SinglePostScreen,
     FeedScreen,
     SplashScreen,
 

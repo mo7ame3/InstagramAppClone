@@ -1,4 +1,6 @@
-package com.example.instagram_app.data
+import android.os.Parcel
+import android.os.Parcelable
+import com.google.gson.Gson
 
 data class PostData(
     val postId: String? = null,
@@ -8,4 +10,53 @@ data class PostData(
     val postImage: String? = null,
     val postDescription: String? = null,
     val time: Long? = null,
-)
+    val likes: List<String>? = null,
+): Parcelable {
+    constructor(parcel: Parcel) : this(
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readValue(Long::class.java.classLoader) as? Long,
+        parcel.createStringArrayList()
+    ) {
+    }
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(postId)
+        parcel.writeString(userId)
+        parcel.writeString(userName)
+        parcel.writeString(userImage)
+        parcel.writeString(postImage)
+        parcel.writeString(postDescription)
+        parcel.writeValue(time)
+        parcel.writeStringList(likes)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+
+    fun toJson(): String {
+        return Gson().toJson(this)
+    }
+    companion object CREATOR : Parcelable.Creator<PostData> {
+        override fun createFromParcel(parcel: Parcel): PostData {
+            return PostData(parcel)
+        }
+
+        override fun newArray(size: Int): Array<PostData?> {
+            return arrayOfNulls(size)
+        }
+
+        fun fromJson(json: String): PostData {
+            return Gson().fromJson(json, PostData::class.java)
+        }
+    }
+
+
+
+}

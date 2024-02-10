@@ -15,6 +15,7 @@ import com.example.instagram_app.screen.auth.SingUpScreen
 import com.example.instagram_app.screen.feed.FeedScreen
 import com.example.instagram_app.screen.post.NewPostScreen
 import com.example.instagram_app.screen.post.PostScreen
+import com.example.instagram_app.screen.post.SinglePostScreen
 import com.example.instagram_app.screen.profile.ProfileScreen
 import com.example.instagram_app.screen.search.SearchScreen
 import com.example.instagram_app.screen.splash.SplashScreen
@@ -48,7 +49,7 @@ fun NavGraph() {
             ProfileScreen(navController = navController, viewModel = viewModel)
         }
 
-        composable(route = AllScreens.NewProfileScreen.name + "/{imageUri}", arguments = listOf(
+        composable(route = AllScreens.NewPostScreen.name + "/{imageUri}", arguments = listOf(
             navArgument(name = "imageUri") {
                 type = NavType.StringType
             }
@@ -62,6 +63,25 @@ fun NavGraph() {
                 )
             }
         }
+        composable(
+            route = AllScreens.SinglePostScreen.name + "/{post}", arguments = listOf(
+                navArgument(name = "post") {
+                    type = NavType.StringType
+                })
+        ) { navBackStackEntry ->
+            val postAsString = navBackStackEntry.arguments?.getString("post")
+            postAsString?.let {
+                val postData =PostData.fromJson(postAsString)
+                SinglePostScreen(
+                    navController = navController,
+                    viewModel = viewModel,
+                    post = postData
+                )
+            }
 
+
+
+        }
     }
+
 }

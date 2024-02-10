@@ -59,7 +59,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("com.google.firebase:firebase-firestore:24.10.0")
+    implementation("com.google.firebase:firebase-firestore:24.10.1")
     implementation("com.google.firebase:firebase-storage:20.3.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
@@ -93,10 +93,10 @@ dependencies {
 //    implementation("com.google.firebase:firebase-firestore-ktx:24.10.0")
 //    implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
 
-    implementation ("com.google.firebase:firebase-auth:22.3.0")
+    implementation ("com.google.firebase:firebase-auth:22.3.1")
     implementation (platform("com.google.firebase:firebase-bom:29.0.0"))
-    implementation ("com.google.firebase:firebase-auth-ktx:22.3.0")
-    implementation ("com.google.firebase:firebase-firestore-ktx:24.10.0")
+    implementation ("com.google.firebase:firebase-auth-ktx:22.3.1")
+    implementation ("com.google.firebase:firebase-firestore-ktx:24.10.1")
     implementation ("com.google.firebase:firebase-storage-ktx:20.3.0")
 
     // Retrofit
@@ -106,7 +106,7 @@ dependencies {
 //    implementation("com.squareup.okhttp3:okhttp:4.10.0")
 //
     // JSON Converter
-//    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 //
     //preferences
 //    implementation("androidx.datastore:datastore-preferences:1.1.0-beta01")
