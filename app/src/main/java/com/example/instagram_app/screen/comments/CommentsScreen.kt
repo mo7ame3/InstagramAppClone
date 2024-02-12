@@ -38,7 +38,7 @@ fun CommentsScreen(navController: NavController, viewModel: InstagramViewModel, 
 
     val comments = viewModel.comments.component1()
     val commentsProgress = viewModel.commentsProgress.value
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
         if (commentsProgress) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -47,7 +47,8 @@ fun CommentsScreen(navController: NavController, viewModel: InstagramViewModel, 
             ) {
                 CommonProgressSpinner()
             }
-        } else if (comments.isEmpty()) {
+        }
+        else if (comments.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.Center,
@@ -55,7 +56,8 @@ fun CommentsScreen(navController: NavController, viewModel: InstagramViewModel, 
             ) {
                 Text(text = "No comments available")
             }
-        } else {
+        }
+        else {
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(items = comments) { comment ->
                     CommentRow(comment)

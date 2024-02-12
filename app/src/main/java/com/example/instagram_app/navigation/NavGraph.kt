@@ -83,7 +83,7 @@ fun NavGraph() {
 
         }
 
-        composable(route = AllScreens.NewPostScreen.name + "/{postId}", arguments = listOf(
+        composable(route = AllScreens.CommentsScreen.name + "/{postId}", arguments = listOf(
             navArgument(name = "postId") {
                 type = NavType.StringType
             }
