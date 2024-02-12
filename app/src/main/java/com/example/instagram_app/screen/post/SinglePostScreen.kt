@@ -86,12 +86,15 @@ fun SinglePostDisplay(navController: NavController, viewModel: InstagramViewMode
 
             if (userData?.userID == post.userId) {
                 // current user post
-            } else {
-                Text(text = "Follow", color = Color.Blue, modifier = Modifier.clickable {
-                    //follow
+            }
+            else if (userData?.following?.contains(post.userId) == true) {
+                Text(text = "Following", color = Color.Gray, modifier = Modifier.clickable {
+                    viewModel.onFollowClick(post.userId!!)
                 })
-
-
+            }else{
+                Text(text = "Follow", color = Color.Blue, modifier = Modifier.clickable {
+                    viewModel.onFollowClick(post.userId!!)
+                })
             }
 
         }

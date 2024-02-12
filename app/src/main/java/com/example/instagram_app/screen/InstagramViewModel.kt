@@ -37,6 +37,12 @@ class InstagramViewModel @Inject constructor(
     val refreshPostProgress = mutableStateOf(false)
     val posts = mutableStateOf<List<PostData>>(listOf())
 
+    val searchedPosts = mutableStateOf<List<PostData>>(listOf())
+    val searchPostsProgress = mutableStateOf(false)
+
+    val postsFeed = mutableStateOf<List<PostData>>(listOf())
+    val postsFeedProgress = mutableStateOf(false)
+
     init {
         //  auth.signOut()
         val currentUser = auth.currentUser
@@ -125,6 +131,8 @@ class InstagramViewModel @Inject constructor(
         if (FirebaseAuth.getInstance().currentUser?.email.isNullOrEmpty()) {
             signedIn.value = false
             userData.value = null
+            searchedPosts.value = listOf()
+            postsFeed.value = listOf()
             navController.navigate(route = AllScreens.SingUpScreen.name) {
                 navController.popBackStack()
                 navController.popBackStack()
@@ -183,6 +191,7 @@ class InstagramViewModel @Inject constructor(
                 userData.value = user
                 inProgress.value = false
                 refreshPosts()
+                getPersonalizedFeed()
             }
             .addOnFailureListener { ext ->
                 handleException(ext, "Can't retrieve user data")
@@ -252,6 +261,10 @@ class InstagramViewModel @Inject constructor(
         val currentUserImage = userData.value?.imageUrl
         if (currentUid != null) {
             val postUuid = UUID.randomUUID().toString()
+            val fillerWords = listOf("the", "be", "to", "is", "of", "and", "or", "a", "in", "it")
+            val searchTerms = description.split(" ", ".", ",", "?", "!", "#")
+                .map { it.lowercase() }
+                .filter { it.isNotEmpty() and !fillerWords.contains(it) }
             val post = PostData(
                 postId = postUuid,
                 userId = currentUid,
@@ -260,7 +273,8 @@ class InstagramViewModel @Inject constructor(
                 postImage = imageUrl.toString(),
                 postDescription = description,
                 time = System.currentTimeMillis(),
-                likes = listOf<String>()
+                likes = listOf<String>(),
+                searchTerms = searchTerms
             )
 
             db.collection(POSTS).document(postUuid).set(post)
@@ -281,21 +295,21 @@ class InstagramViewModel @Inject constructor(
         }
     }
 
-    private fun updatePostUserImageData(imageUrl: String?){
+    private fun updatePostUserImageData(imageUrl: String?) {
         val currentUid = auth.currentUser?.uid
         db.collection(POSTS).whereEqualTo("userId", currentUid).get()
             .addOnSuccessListener { documents ->
-            val posts = mutableStateOf<List<PostData>>(arrayListOf())
-                convertPosts(documents , posts)
+                val posts = mutableStateOf<List<PostData>>(arrayListOf())
+                convertPosts(documents, posts)
                 val refs = arrayListOf<DocumentReference>()
-                for(post in posts.value){
+                for (post in posts.value) {
                     post.postId?.let { id ->
                         refs.add(db.collection(POSTS).document(id))
                     }
                 }
-                if(refs.isNotEmpty()){
-                    db.runBatch{batch ->
-                        for(ref in refs){
+                if (refs.isNotEmpty()) {
+                    db.runBatch { batch ->
+                        for (ref in refs) {
                             batch.update(ref, "userImage", imageUrl)
 
                         }
@@ -341,4 +355,99 @@ class InstagramViewModel @Inject constructor(
         outState.value = sortedPosts
     }
 
+
+    fun searchPosts(searchTerm: String) {
+        if (searchTerm.isNotEmpty()) {
+            searchPostsProgress.value = true
+            db.collection(POSTS).whereArrayContains("searchTerms", searchTerm.trim().lowercase())
+                .get()
+                .addOnSuccessListener {
+                    convertPosts(it, searchedPosts)
+                    searchPostsProgress.value = false
+                }
+                .addOnFailureListener { ex ->
+                    handleException(ex, "can't search posts")
+                    searchPostsProgress.value = false
+                }
+        }
+    }
+
+    fun onFollowClick(userId: String) {
+        auth.currentUser?.uid?.let { currentUser ->
+            val following = arrayListOf<String>()
+            userData.value?.following?.let {
+                following.addAll(it)
+            }
+            if (following.contains(userId)) {
+                following.remove(userId)
+            } else {
+                following.add(userId)
+            }
+            db.collection(USER).document(currentUser).update("following", following)
+                .addOnSuccessListener {
+                    getUserData(currentUser)
+                }
+        }
+    }
+
+    private fun getPersonalizedFeed() {
+        val following = userData.value?.following
+        if (!following.isNullOrEmpty()) {
+            postsFeedProgress.value = true
+            db.collection(POSTS).whereIn("userId", following).get()
+                .addOnSuccessListener {
+                    convertPosts(documents = it, outState = postsFeed)
+                    if (postsFeed.value.isEmpty()) {
+                        getGeneralFeed()
+                    } else {
+                        postsFeedProgress.value = false
+                    }
+                }
+                .addOnFailureListener { ex ->
+                    handleException(ex, "can't get personalized feed")
+                    postsFeedProgress.value = false
+                }
+        } else {
+            getGeneralFeed()
+        }
+    }
+
+    private fun getGeneralFeed() {
+        postsFeedProgress.value = true
+        val currentTime = System.currentTimeMillis()
+        val difference = 24 * 60 * 60 * 1000 // day in millis
+        db.collection(POSTS).whereGreaterThan("time", currentTime - difference)
+            .get()
+            .addOnSuccessListener {
+                convertPosts(documents = it, outState = postsFeed)
+                postsFeedProgress.value = false
+            }
+            .addOnFailureListener { ex ->
+                handleException(ex, "can't get feed")
+                postsFeedProgress.value = false
+            }
+    }
+
+    fun onLikePost(postData: PostData) {
+        auth.currentUser?.uid?.let { userId ->
+            postData.likes?.let { likes ->
+                val newLikes = arrayListOf<String>()
+                if (likes.contains(userId)) {
+                    newLikes.addAll(likes.filter { userId != it })
+                } else {
+                    newLikes.addAll(likes)
+                    newLikes.add(userId)
+                }
+                postData.postId?.let { postId ->
+                    db.collection(POSTS).document(postId).update("likes", newLikes)
+                        .addOnSuccessListener {
+                            postData.likes = newLikes
+                        }
+                        .addOnFailureListener { ex ->
+                            handleException(ex , "Unable to like post")
+                        }
+                }
+            }
+        }
+    }
 }
