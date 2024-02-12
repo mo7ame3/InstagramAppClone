@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,6 +34,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.instagram_app.R
 import com.example.instagram_app.components.CommonDivider
 import com.example.instagram_app.components.CommonImage
+import com.example.instagram_app.navigation.AllScreens
 import com.example.instagram_app.screen.InstagramViewModel
 
 @Composable
@@ -41,6 +43,13 @@ fun SinglePostScreen(
     post: PostData,
     viewModel: InstagramViewModel
 ) {
+
+    val comments = viewModel.comments.value
+
+    LaunchedEffect(key1 = Unit) {
+        viewModel.getComments(post.postId)
+    }
+
     post.userId?.let {
         Column(
             modifier = Modifier
@@ -52,14 +61,24 @@ fun SinglePostScreen(
             Text(text = "Back", modifier = Modifier.clickable { navController.popBackStack() })
             CommonDivider()
 
-            SinglePostDisplay(navController = navController, post = post, viewModel = viewModel)
+            SinglePostDisplay(
+                navController = navController,
+                post = post,
+                viewModel = viewModel,
+                numberOfComments = comments.size
+            )
         }
     }
 }
 
 
 @Composable
-fun SinglePostDisplay(navController: NavController, viewModel: InstagramViewModel, post: PostData) {
+fun SinglePostDisplay(
+    navController: NavController,
+    viewModel: InstagramViewModel,
+    post: PostData,
+    numberOfComments: Int
+) {
     val userData = viewModel.userData.value
     Box(
         modifier = Modifier
@@ -86,12 +105,11 @@ fun SinglePostDisplay(navController: NavController, viewModel: InstagramViewMode
 
             if (userData?.userID == post.userId) {
                 // current user post
-            }
-            else if (userData?.following?.contains(post.userId) == true) {
+            } else if (userData?.following?.contains(post.userId) == true) {
                 Text(text = "Following", color = Color.Gray, modifier = Modifier.clickable {
                     viewModel.onFollowClick(post.userId!!)
                 })
-            }else{
+            } else {
                 Text(text = "Follow", color = Color.Blue, modifier = Modifier.clickable {
                     viewModel.onFollowClick(post.userId!!)
                 })
@@ -125,6 +143,15 @@ fun SinglePostDisplay(navController: NavController, viewModel: InstagramViewMode
         Text(text = post.postDescription ?: "", modifier = Modifier.padding(start = 8.dp))
     }
     Row(modifier = Modifier.padding(8.dp)) {
-        Text(text = "10 comments", color = Color.Gray, modifier = Modifier.padding(start = 8.dp))
+        Text(
+            text = "$numberOfComments comments",
+            color = Color.Gray,
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .clickable {
+                    post.postId?.let {
+                        navController.navigate(AllScreens.CommentsScreen.name + "/$it")
+                    }
+                })
     }
 }

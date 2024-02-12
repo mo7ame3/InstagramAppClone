@@ -12,6 +12,7 @@ import com.example.instagram_app.components.NotificationMessage
 import com.example.instagram_app.screen.InstagramViewModel
 import com.example.instagram_app.screen.auth.LoginScreen
 import com.example.instagram_app.screen.auth.SingUpScreen
+import com.example.instagram_app.screen.comments.CommentsScreen
 import com.example.instagram_app.screen.feed.FeedScreen
 import com.example.instagram_app.screen.post.NewPostScreen
 import com.example.instagram_app.screen.post.PostScreen
@@ -71,7 +72,7 @@ fun NavGraph() {
         ) { navBackStackEntry ->
             val postAsString = navBackStackEntry.arguments?.getString("post")
             postAsString?.let {
-                val postData =PostData.fromJson(postAsString)
+                val postData = PostData.fromJson(postAsString)
                 SinglePostScreen(
                     navController = navController,
                     viewModel = viewModel,
@@ -80,8 +81,22 @@ fun NavGraph() {
             }
 
 
-
         }
-    }
 
+        composable(route = AllScreens.NewPostScreen.name + "/{postId}", arguments = listOf(
+            navArgument(name = "postId") {
+                type = NavType.StringType
+            }
+        )) { navBackStackEntry ->
+            val postId = navBackStackEntry.arguments?.getString("postId")
+            postId?.let {
+                CommentsScreen(
+                    navController = navController,
+                    viewModel = viewModel,
+                    postId = it
+                )
+            }
+        }
+
+    }
 }

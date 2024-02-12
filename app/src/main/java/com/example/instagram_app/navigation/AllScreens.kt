@@ -10,5 +10,6 @@ enum class AllScreens {
     SinglePostScreen,
     FeedScreen,
     SplashScreen,
+    CommentsScreen,
 
 }

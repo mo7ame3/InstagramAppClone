@@ -6,6 +6,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
+import com.example.instagram_app.data.CommentData
 import com.example.instagram_app.data.Event
 import com.example.instagram_app.data.UserData
 import com.example.instagram_app.navigation.AllScreens
@@ -22,6 +23,7 @@ import javax.inject.Inject
 
 const val USER = "users"
 const val POSTS = "posts"
+const val COMMENTS = "comments"
 
 @HiltViewModel
 class InstagramViewModel @Inject constructor(
@@ -42,6 +44,12 @@ class InstagramViewModel @Inject constructor(
 
     val postsFeed = mutableStateOf<List<PostData>>(listOf())
     val postsFeedProgress = mutableStateOf(false)
+
+    val comments = mutableStateOf<List<CommentData>>(listOf())
+    val commentsProgress = mutableStateOf(false)
+
+    val followers = mutableStateOf(0)
+
 
     init {
         //  auth.signOut()
@@ -133,6 +141,7 @@ class InstagramViewModel @Inject constructor(
             userData.value = null
             searchedPosts.value = listOf()
             postsFeed.value = listOf()
+            comments.value = listOf()
             navController.navigate(route = AllScreens.SingUpScreen.name) {
                 navController.popBackStack()
                 navController.popBackStack()
@@ -192,6 +201,7 @@ class InstagramViewModel @Inject constructor(
                 inProgress.value = false
                 refreshPosts()
                 getPersonalizedFeed()
+                getFollowers(user?.userID)
             }
             .addOnFailureListener { ext ->
                 handleException(ext, "Can't retrieve user data")
@@ -444,10 +454,57 @@ class InstagramViewModel @Inject constructor(
                             postData.likes = newLikes
                         }
                         .addOnFailureListener { ex ->
-                            handleException(ex , "Unable to like post")
+                            handleException(ex, "Unable to like post")
                         }
                 }
             }
         }
     }
+
+    fun createComment(postId: String, text: String) {
+        userData.value?.userName?.let { userName ->
+            val commentId = UUID.randomUUID().toString()
+            val comment = CommentData(
+                commentId = commentId,
+                postId = postId,
+                userName = userName,
+                text = text,
+                timesTamp = System.currentTimeMillis()
+            )
+            db.collection(COMMENTS).document(commentId).set(comment)
+                .addOnSuccessListener {
+                    getComments(postId = postId)
+                }
+                .addOnFailureListener { ex ->
+                    handleException(ex, "Can't create comment")
+                }
+        }
+    }
+
+
+    fun getComments(postId: String?) {
+        commentsProgress.value = true
+        db.collection(COMMENTS).whereEqualTo("postId", postId).get()
+            .addOnSuccessListener { documents ->
+                val newComments = mutableListOf<CommentData>()
+                documents.forEach { doc ->
+                    val comment = doc.toObject<CommentData>()
+                    newComments.add(comment)
+                }
+                val sortedComments = newComments.sortedByDescending { it.timesTamp }
+                comments.value = sortedComments
+                commentsProgress.value = false
+            }.addOnFailureListener { ex ->
+                handleException(ex, "Can't retrieve comments")
+                commentsProgress.value = false
+            }
+    }
+
+    private fun getFollowers(uid: String?) {
+        db.collection(USER).whereArrayContains("following", uid ?: "").get()
+            .addOnSuccessListener { document ->
+                followers.value = document.size()
+            }
+    }
+
 }

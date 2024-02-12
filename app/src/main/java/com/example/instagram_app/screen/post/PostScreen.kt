@@ -71,8 +71,12 @@ data class PostRow(
 fun PostScreen(navController: NavController, viewModel: InstagramViewModel) {
     val userData = viewModel.userData.value
     val isLoading = viewModel.inProgress.value
+
     val postsLoading = viewModel.refreshPostProgress.value
     val posts = viewModel.posts.value
+
+    val followers = viewModel.followers.value
+
     val newPostImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -81,6 +85,8 @@ fun PostScreen(navController: NavController, viewModel: InstagramViewModel) {
             navController.navigate(route = AllScreens.NewPostScreen.name + "/$encoded")
         }
     }
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -92,21 +98,21 @@ fun PostScreen(navController: NavController, viewModel: InstagramViewModel) {
                     newPostImageLauncher.launch("image/*")
                 }
                 Text(
-                    text = "15\nposts",
+                    text = "${posts.size}\nposts",
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "54\nfollowers",
+                    text = "${followers}\nfollowers",
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "54\nfollowing",
+                    text = "${userData?.following?.size ?: 0}\nfollowing",
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
@@ -147,7 +153,7 @@ fun PostScreen(navController: NavController, viewModel: InstagramViewModel) {
             ) { post ->
                 val postJson = post.toJson()
                 val encodedPostJson = URLEncoder.encode(postJson, StandardCharsets.UTF_8.toString())
-              navController.navigate(route = AllScreens.SinglePostScreen.name + "/$encodedPostJson")
+                navController.navigate(route = AllScreens.SinglePostScreen.name + "/$encodedPostJson")
             }
         }
         BottomNavigationMenu(
